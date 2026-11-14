@@ -148,9 +148,27 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
   const addCategory = useCallback(
     (name: string) =>
-      runAndReload(() =>
-        supabase.from('categories').insert({ name: name.trim(), position: nextCategoryPosition(categories) }),
-      ),
+      runAndReload(async () => {
+        const { data, error } = await supabase
+          .from('categories')
+          .insert({ name: name.trim(), position: -1 })
+          .select('id')
+          .single();
+        if (error) return { error };
+        // Yeni kategori listenin başına (Favoriler'in hemen altına) eklenir:
+        const created = data as { id: string };
+        const updates = [
+          { id: created.id, position: 0 },
+          ...categories.map((category, index) => ({ id: category.id, position: index + 1 })),
+        ];
+        const responses = await Promise.all(
+          updates.map((update) =>
+            supabase.from('categories').update({ position: update.position }).eq('id', update.id),
+          ),
+        );
+        const failed = responses.find((response) => response.error);
+        return failed?.error ? { error: failed.error } : { error: null };
+      }),
     [categories, runAndReload],
   );
 

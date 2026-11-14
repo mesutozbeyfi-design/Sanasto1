@@ -74,15 +74,13 @@ export default function FlashcardGame({ title, words, onExit, onRestart, onNext 
       <article key={word.id} className="animate-modal-in overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-md">
         <WordImage src={word.image_url} alt="" fit="cover" className="aspect-square w-full" />
         <div className="space-y-3 p-5 text-center sm:p-6">
-          <div className="flex items-center justify-end gap-3">
-            <div className="flex items-center gap-3">
-              <div>
-                <p className="text-2xl font-extrabold text-slate-900 sm:text-3xl">{word.finnish}</p>
-                <p className="text-lg text-slate-600">{word.turkish}</p>
-              </div>
-              <SpeakButton text={word.finnish} language="fi" label="Fince telaffuz" />
-            </div>
+          <div className="flex items-center justify-center gap-3">
             <FlashcardStatusPicker status={word.learning_status} disabled={isSavingStatus} onSelect={handleStatusChange} />
+            <div>
+              <p className="text-2xl font-extrabold text-slate-900 sm:text-3xl">{word.finnish}</p>
+              <p className="text-lg text-slate-600">{word.turkish}</p>
+            </div>
+            <SpeakButton text={word.finnish} language="fi" label="Fince telaffuz" />
           </div>
           {statusError && (
             <p role="alert" className="text-sm font-medium text-red-700">{statusError}</p>

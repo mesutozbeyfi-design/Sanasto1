@@ -66,17 +66,20 @@ function getNextGameDefinition(gameId: GameId): GameDefinition | undefined {
 
 interface CategoryDetailPageProps {
   category: Category;
+  overrideWords?: Word[];
   onBack: () => void;
 }
 
-export default function CategoryDetailPage({ category, onBack }: CategoryDetailPageProps) {
+export default function CategoryDetailPage({ category, overrideWords, onBack }: CategoryDetailPageProps) {
   const isUncategorized = category.id === '__uncategorized__';
   const { words: allWords, categories, isLoading } = useLibrary();
   const categoryWords = useMemo(
-    () => allWords.filter((word) =>
-      isUncategorized ? !word.category_id : word.category_id === category.id,
-    ),
-    [allWords, category.id, isUncategorized],
+    () =>
+      overrideWords ??
+      allWords.filter((word) =>
+        isUncategorized ? !word.category_id : word.category_id === category.id,
+      ),
+    [allWords, category.id, isUncategorized, overrideWords],
   );
 
   const [tab, setTab] = useState<CategoryTab>('games');
@@ -88,9 +91,14 @@ export default function CategoryDetailPage({ category, onBack }: CategoryDetailP
   );
 
   const gameConfig = useGameSettings();
+  const isVirtualCategory = overrideWords !== undefined;
   const categoryConfig: GameSetupConfig = useMemo(
-    () => ({ ...gameConfig.config, categoryIds: isUncategorized ? [] : [category.id] }),
-    [gameConfig.config, category.id, isUncategorized],
+    () => ({
+      ...gameConfig.config,
+      categoryIds: isUncategorized ? [] : isVirtualCategory ? [] : [category.id],
+      favoritesOnly: isVirtualCategory ? true : gameConfig.config.favoritesOnly,
+    }),
+    [gameConfig.config, category.id, isUncategorized, isVirtualCategory],
   );
   const updateCategoryConfig = (next: GameSetupConfig) => {
     gameConfig.updateConfig({ ...next, categoryIds: gameConfig.config.categoryIds });
@@ -189,15 +197,6 @@ export default function CategoryDetailPage({ category, onBack }: CategoryDetailP
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-start">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-        >
-          <ArrowLeft className="h-4 w-4" /> Geri
-        </button>
-      </div>
       <div className="flex min-w-0 flex-col items-center px-2">
         <h1 className="max-w-full truncate px-4 text-2xl font-bold text-slate-900 sm:px-6">{category.name}</h1>
         <p className="shrink-0 text-sm font-semibold tabular-nums text-slate-600">

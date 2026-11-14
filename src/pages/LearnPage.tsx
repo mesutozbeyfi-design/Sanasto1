@@ -1,13 +1,12 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { ArrowUpDown, ChevronRight, Heart, Pencil, Plus, Sparkles, X } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
-import EmptyState from '@/components/EmptyState';
 import LearningBattery from '@/components/LearningBattery';
 import Modal from '@/components/Modal';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { describeError } from '@/lib/errors';
 import { getLearningProgress } from '@/lib/learningProgress';
-import { CATEGORY_SORT_OPTIONS, type CategorySortMode } from '@/lib/categorySort';
+import { CATEGORY_SORT_OPTIONS } from '@/lib/categorySort';
 import { DEFAULT_CATEGORY_NAMES, type Category } from '@/lib/vocabulary';
 import CategoryDetailPage from '@/pages/CategoryDetailPage';
 
@@ -151,7 +150,7 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
     return (
       <CategoryDetailPage
         category={selectedCategory}
-        categoryWords={
+        overrideWords={
           selectedCategory.id === FAVORITES_ID
             ? favoriteWords
             : selectedCategory.id === UNCAT_ID
@@ -229,7 +228,7 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
                       type="button"
                       aria-pressed={categorySortMode === option.value}
                       onClick={() => {
-                        setCategorySortMode(option.value as CategorySortMode);
+                        setCategorySortMode(option.value);
                         setShowSortMenu(false);
                       }}
                       className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${

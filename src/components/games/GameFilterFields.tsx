@@ -1,6 +1,6 @@
 import SelectionFilterFields from '@/components/SelectionFilterFields';
 import SortDropdown from '@/components/SortDropdown';
-import { type GameSetupConfig, type WordCount } from '@/lib/games/gameConfig';
+import { type GameSetupConfig } from '@/lib/games/gameConfig';
 import type { Category, Word } from '@/lib/vocabulary';
 import type { WordListSort } from '@/lib/wordSort';
 
@@ -42,44 +42,12 @@ export default function GameFilterFields({ config, onChange, categories, words, 
         filters={config}
         onChange={update}
         hideCategoryFilter={hideCategoryFilter}
-        toggles={[
-          {
-            label: 'Sadece favoriler',
-            checked: config.favoritesOnly,
-            onChange: (favoritesOnly) => update({ favoritesOnly }),
-          },
-          {
-            label: 'Daha önce yanlışlar',
-            checked: config.wrongOnly,
-            onChange: (wrongOnly) => update({ wrongOnly }),
-          },
-        ]}
+        toggles={[]}
       />
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-semibold text-slate-700">Kelime sıralaması</legend>
         <SortDropdown label="Kelime sıralaması" options={GAME_SORT_OPTIONS} value={sortValue} onChange={applySort} />
-      </fieldset>
-
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold text-slate-700">Kelime sayısı</legend>
-        <div className="flex items-center justify-between gap-3">
-          <input
-            type="range"
-            min={10}
-            max={500}
-            step={10}
-            value={config.count}
-            onChange={(event) => update({ count: Number(event.target.value) as WordCount })}
-            aria-label="Kelime sayısı"
-            className="h-2 w-full cursor-pointer accent-blue-700"
-          />
-          <span className="w-12 shrink-0 text-right text-lg font-bold tabular-nums text-blue-700">{config.count}</span>
-        </div>
-        <div className="flex justify-between text-xs font-medium text-slate-500">
-          <span>10</span>
-          <span>500</span>
-        </div>
       </fieldset>
     </div>
   );
