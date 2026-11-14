@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
-import AppShell, { type TabId } from '@/components/AppShell';
+import AppShell, { SettingsPage, type TabId } from '@/components/AppShell';
 import { LibraryProvider, useLibrary } from '@/contexts/LibraryContext';
 import GamesPage from '@/pages/GamesPage';
 import LearnPage from '@/pages/LearnPage';
@@ -39,6 +39,7 @@ function SignedInContent() {
       {activeTab === 'learn' && <LearnPage />}
       {activeTab === 'games' && <GamesPage />}
       {activeTab === 'words' && <WordsPage />}
+      {activeTab === 'settings' && <SettingsPage />}
     </AppShell>
   );
 }

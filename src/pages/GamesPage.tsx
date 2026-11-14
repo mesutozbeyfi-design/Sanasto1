@@ -161,7 +161,7 @@ export default function GamesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Karışık Oyna ve Dinle" description="Tüm kategorilerdeki kelimeleri seçip oynayın ve dinleyin." />
+      <PageHeader title="Karışık Oyna" description="Tüm kategorilerdeki kelimeleri seçip oynayın ve dinleyin." />
 
       {words.length === 0 && (
         <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">

@@ -1,5 +1,5 @@
-import { useMemo, useState, type FormEvent } from 'react';
-import { ChevronRight, Pencil, Plus, Sparkles, X } from 'lucide-react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { ArrowUpDown, ChevronRight, Heart, Pencil, Plus, Sparkles, X } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
 import EmptyState from '@/components/EmptyState';
 import LearningBattery from '@/components/LearningBattery';
@@ -7,6 +7,7 @@ import Modal from '@/components/Modal';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { describeError } from '@/lib/errors';
 import { getLearningProgress } from '@/lib/learningProgress';
+import { CATEGORY_SORT_OPTIONS, type CategorySortMode } from '@/lib/categorySort';
 import { DEFAULT_CATEGORY_NAMES, type Category } from '@/lib/vocabulary';
 import CategoryDetailPage from '@/pages/CategoryDetailPage';
 
@@ -15,6 +16,7 @@ interface LearnPageProps {
 }
 
 const DRAG_MIME = 'text/category-id';
+const FAVORITES_ID = '__favorites__';
 
 export default function LearnPage({ initialCategoryId = null }: LearnPageProps) {
   const {
@@ -25,6 +27,8 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
     deleteCategory,
     seedDefaultCategories,
     reorderCategories,
+    categorySortMode,
+    setCategorySortMode,
   } = useLibrary();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -36,6 +40,7 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(initialCategoryId);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const wordsByCategory = useMemo(() => {
     const grouped = new Map<string, typeof words>();
@@ -49,12 +54,15 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
   }, [words]);
 
   const uncategorizedWords = useMemo(() => words.filter((word) => !word.category_id), [words]);
+  const favoriteWords = useMemo(() => words.filter((word) => word.is_favorite), [words]);
 
   const UNCAT_ID = '__uncategorized__';
   const selectedCategory: Category | null = selectedCategoryId
     ? selectedCategoryId === UNCAT_ID
       ? { id: UNCAT_ID, name: 'Kategorisiz kelimeler', position: -1, created_at: '' }
-      : categories.find((category) => category.id === selectedCategoryId) ?? null
+      : selectedCategoryId === FAVORITES_ID
+        ? { id: FAVORITES_ID, name: 'Favoriler', position: -2, created_at: '' }
+        : categories.find((category) => category.id === selectedCategoryId) ?? null
     : null;
 
   const existingNames = new Set(categories.map((category) => category.name.toLocaleLowerCase('tr-TR')));
@@ -143,6 +151,13 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
     return (
       <CategoryDetailPage
         category={selectedCategory}
+        categoryWords={
+          selectedCategory.id === FAVORITES_ID
+            ? favoriteWords
+            : selectedCategory.id === UNCAT_ID
+              ? uncategorizedWords
+              : undefined
+        }
         onBack={() => setSelectedCategoryId(null)}
       />
     );
@@ -189,7 +204,7 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
             </div>
           </form>
         ) : (
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-2">
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
@@ -197,6 +212,37 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
             >
               <Plus className="h-5 w-5" /> Kategori ekle
             </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowSortMenu((open) => !open)}
+                aria-expanded={showSortMenu}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md"
+              >
+                <ArrowUpDown className="h-5 w-5" /> Sırala
+              </button>
+              {showSortMenu && (
+                <div className="absolute right-0 top-full z-20 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-lg">
+                  {CATEGORY_SORT_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={categorySortMode === option.value}
+                      onClick={() => {
+                        setCategorySortMode(option.value as CategorySortMode);
+                        setShowSortMenu(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                        categorySortMode === option.value ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))
+                  }
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -219,75 +265,53 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
         {error && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
       </section>
 
-      {categories.length === 0 ? (
-        <EmptyState
-          title="Henüz kategori yok"
-          text="Yukarıdan kendi kategorinizi ekleyin ya da hazır konu listesini tek seferde ekleyin."
-        />
-      ) : (
+      {(categories.length > 0 || favoriteWords.length > 0) && (
         <>
           <p className="text-sm text-slate-500">
-            Kategorileri sıralamak için bir kategoriye basılı tutup yukarı veya aşağı sürükleyin.
+            {categorySortMode === 'manual'
+              ? 'Kategorileri sıralamak için bir kategoriye basılı tutup yukarı veya aşağı sürükleyin.'
+              : 'Kategoriler alfabetik olarak sıralandı.'}
           </p>
 
           <div className="grid gap-3">
+            <CategoryCard
+              name="Favoriler"
+              progress={getLearningProgress(favoriteWords)}
+              icon={<Heart className="h-4 w-4 text-rose-500" aria-hidden="true" />}
+              onSelect={() => setSelectedCategoryId(FAVORITES_ID)}
+              disabled={favoriteWords.length === 0}
+            />
             {categories.map((category) => {
               const categoryWords = wordsByCategory.get(category.id) ?? [];
               const progress = getLearningProgress(categoryWords);
               const isDragged = draggedId === category.id;
               const isDropTarget = dropTargetId === category.id && !isDragged;
               return (
-                <article
+                <CategoryCard
                   key={category.id}
-                  draggable
+                  name={category.name}
+                  progress={progress}
+                  isDraggable
+                  isDragged={isDragged}
+                  isDropTarget={isDropTarget}
                   onDragStart={(event) => handleDragStart(event, category.id)}
                   onDragOver={(event) => handleDragOver(event, category.id)}
                   onDrop={(event) => handleDrop(event, category.id)}
                   onDragEnd={handleDragEnd}
-                  className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md ${
-                    isDragged ? 'opacity-40' : isDropTarget ? 'border-blue-400 ring-2 ring-blue-200' : 'border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-stretch">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategoryId(category.id)}
-                      className="flex min-w-0 flex-1 flex-col gap-2 px-5 py-4 text-left transition hover:bg-slate-50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <h3 className="truncate text-base font-bold text-slate-900">{category.name}</h3>
-                        <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
-                      </div>
-                      <LearningBattery progress={progress} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingCategory(category)}
-                      aria-label={`${category.name} kategorisini düzenle`}
-                      className="flex shrink-0 items-center border-l border-slate-100 px-3 text-slate-400 transition hover:bg-blue-50 hover:text-blue-700"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                  </div>
-                </article>
+                  onSelect={() => setSelectedCategoryId(category.id)}
+                  onEdit={() => setEditingCategory(category)}
+                  editLabel={`${category.name} kategorisini düzenle`}
+                />
               );
             })}
           </div>
 
           {uncategorizedWords.length > 0 && (
-            <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <button
-                type="button"
-                onClick={() => setSelectedCategoryId(UNCAT_ID)}
-                className="flex min-w-0 w-full flex-col gap-2 px-5 py-4 text-left transition hover:bg-slate-50"
-              >
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-base font-bold text-slate-900">Kategorisiz kelimeler</h3>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
-                </div>
-                <LearningBattery progress={getLearningProgress(uncategorizedWords)} />
-              </button>
-            </article>
+            <CategoryCard
+              name="Kategorisiz kelimeler"
+              progress={getLearningProgress(uncategorizedWords)}
+              onSelect={() => setSelectedCategoryId(UNCAT_ID)}
+            />
           )}
         </>
       )}
@@ -311,6 +335,77 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
         />
       )}
     </div>
+  );
+}
+
+function CategoryCard({
+  name,
+  progress,
+  icon,
+  isDraggable = false,
+  isDragged = false,
+  isDropTarget = false,
+  disabled = false,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onSelect,
+  onEdit,
+  editLabel,
+}: {
+  name: string;
+  progress: ReturnType<typeof getLearningProgress>;
+  icon?: ReactNode;
+  isDraggable?: boolean;
+  isDragged?: boolean;
+  isDropTarget?: boolean;
+  disabled?: boolean;
+  onDragStart?: (event: React.DragEvent) => void;
+  onDragOver?: (event: React.DragEvent) => void;
+  onDrop?: (event: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  onSelect: () => void;
+  onEdit?: () => void;
+  editLabel?: string;
+}) {
+  return (
+    <article
+      draggable={isDraggable && !disabled}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md ${
+        isDragged ? 'opacity-40' : isDropTarget ? 'border-blue-400 ring-2 ring-blue-200' : 'border-slate-200'
+      } ${disabled ? 'opacity-60' : ''}`}
+    >
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={onSelect}
+          disabled={disabled}
+          className="flex min-w-0 flex-1 flex-col gap-2 px-5 py-4 text-left transition hover:bg-slate-50"
+        >
+          <div className="flex items-center gap-2">
+            {icon}
+            <h3 className="truncate text-base font-bold text-slate-900">{name}</h3>
+            <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
+          </div>
+          <LearningBattery progress={progress} />
+        </button>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={editLabel}
+            className="flex shrink-0 items-center border-l border-slate-100 px-3 text-slate-400 transition hover:bg-blue-50 hover:text-blue-700"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </article>
   );
 }
 
