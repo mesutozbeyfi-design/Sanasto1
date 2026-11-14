@@ -157,7 +157,6 @@ export default function LearnPage({ initialCategoryId = null }: LearnPageProps) 
               ? uncategorizedWords
               : undefined
         }
-        onBack={() => setSelectedCategoryId(null)}
       />
     );
   }

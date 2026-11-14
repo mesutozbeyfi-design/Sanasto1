@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import CategoryFilterField from '@/components/CategoryFilterField';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { EMPTY_WORD_FILTERS, type WordFilters } from '@/lib/wordFilters';
@@ -7,14 +7,13 @@ import { LEARNING_STATUS_OPTIONS, type LearningStatus } from '@/lib/vocabulary';
 interface WordFilterBarProps {
   filters: WordFilters;
   onChange: (filters: WordFilters) => void;
-  showFavoritesToggle?: boolean;
   hideCategoryFilter?: boolean;
 }
 
 const selectClass =
   'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
 
-export default function WordFilterBar({ filters, onChange, showFavoritesToggle = true, hideCategoryFilter = false }: WordFilterBarProps) {
+export default function WordFilterBar({ filters, onChange, hideCategoryFilter = false }: WordFilterBarProps) {
   const { categories, words } = useLibrary();
   const hasActiveFilters = JSON.stringify(filters) !== JSON.stringify(EMPTY_WORD_FILTERS);
 
@@ -61,21 +60,6 @@ export default function WordFilterBar({ filters, onChange, showFavoritesToggle =
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-4">
-        {showFavoritesToggle ? (
-          <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
-            <input
-              type="checkbox"
-              checked={filters.favoritesOnly}
-              onChange={(event) => update({ favoritesOnly: event.target.checked })}
-              className="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-500"
-            />
-            Sadece favoriler
-          </label>
-        ) : (
-          <span className="inline-flex items-center gap-2 text-sm text-slate-500">
-            <SlidersHorizontal className="h-4 w-4" /> Filtreleri daraltın
-          </span>
-        )}
           <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
             <input
               type="checkbox"
@@ -89,7 +73,7 @@ export default function WordFilterBar({ filters, onChange, showFavoritesToggle =
         {hasActiveFilters && (
           <button
             type="button"
-            onClick={() => onChange({ ...EMPTY_WORD_FILTERS, favoritesOnly: showFavoritesToggle ? false : filters.favoritesOnly })}
+            onClick={() => onChange({ ...EMPTY_WORD_FILTERS })}
             className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 transition hover:text-blue-900"
           >
             <X className="h-4 w-4" /> Filtreleri temizle

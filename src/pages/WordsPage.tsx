@@ -80,10 +80,6 @@ export default function WordsPage() {
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold text-slate-600">
-        <span>Toplam {words.length} kelime</span>
-        <span>Seçili filtrelerde {visibleWords.length} kelime</span>
-      </div>
         <div ref={filterContainerRef} className="relative w-full">
           <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-[28rem]">
             <div className="relative min-w-0">

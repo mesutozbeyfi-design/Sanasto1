@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, Headphones, Loader2, AlertTriangle, Info, Play, ArrowLeft, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronRight, Headphones, Loader2, AlertTriangle, Info, Play, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import FlashcardGame from '@/components/games/FlashcardGame';
 import GameSession from '@/components/games/GameSession';
@@ -30,7 +30,7 @@ interface ActiveGame {
   attempt: number;
 }
 
-type Tab = 'games' | 'settings' | 'listening';
+type Tab = 'games' | 'listening';
 
 function isQuizGame(gameId: GameId): gameId is QuizGameId {
   return gameId !== 'flashcards';
@@ -45,6 +45,7 @@ export default function GamesPage() {
   const { words, categories, isLoading, loadError } = useLibrary();
   const { config, updateConfig, saveError } = useGameSettings();
   const [tab, setTab] = useState<Tab>('games');
+  const [showSettings, setShowSettings] = useState(false);
   const [active, setActive] = useState<ActiveGame | null>(null);
   const [listeningQueue, setListeningQueue] = useState<Word[] | null>(null);
   const [listeningSettings, setListeningSettings] = useStoredState<ListeningSettings>(
@@ -59,7 +60,6 @@ export default function GamesPage() {
     }
     return map;
   }, [words, config]);
-  const selectedCount = useMemo(() => getCandidateWords(words, config, false).length, [words, config]);
 
   if (isLoading) {
     return (
@@ -108,7 +108,7 @@ export default function GamesPage() {
     const gameWords = selectGameWords(words, config, def.requiresImage);
     const pool = poolByGame.get(gameId) ?? [];
     if (gameWords.length === 0 || getSetupIssues(def, pool, words, config).length > 0) {
-      setTab('settings');
+      setShowSettings(true);
       return;
     }
     setActive({ gameId, words: gameWords, attempt: 0 });
@@ -173,7 +173,8 @@ export default function GamesPage() {
         <div className="space-y-4">
           <button
             type="button"
-            onClick={() => setTab('settings')}
+            onClick={() => setShowSettings((open) => !open)}
+            aria-expanded={showSettings}
             className="group flex w-full items-center gap-4 rounded-2xl border border-blue-300 bg-blue-50 px-4 py-2.5 text-left shadow-sm transition hover:border-blue-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
@@ -182,9 +183,19 @@ export default function GamesPage() {
             <span className="min-w-0 flex-1">
               <span className="block truncate font-bold text-slate-900">Kategoriler ve Filtreler</span>
             </span>
-            <span className="shrink-0 rounded-full bg-blue-100 px-3 py-0.5 text-sm font-semibold text-blue-800">{selectedCount}</span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-blue-600 transition group-hover:translate-x-0.5" aria-hidden="true" />
+            <ChevronDown className={`h-5 w-5 shrink-0 text-blue-600 transition ${showSettings ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
+
+          {showSettings && (
+            <GameSettingsPanel
+              config={config}
+              onChange={updateConfig}
+              categories={categories}
+              words={words}
+              saveError={saveError}
+              poolByGame={poolByGame}
+            />
+          )}
 
           <button
             type="button"
@@ -210,7 +221,7 @@ export default function GamesPage() {
                 <li key={game.id}>
                   <button
                     type="button"
-                    onClick={() => (canPlay ? launchGame(game.id) : setTab('settings'))}
+                    onClick={() => (canPlay ? launchGame(game.id) : setShowSettings(true))}
                     className="group flex h-full w-full flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:border-blue-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:rounded-3xl sm:p-6"
                   >
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
@@ -229,20 +240,6 @@ export default function GamesPage() {
               );
             })}
           </ul>
-        </div>
-      )}
-
-      {tab === 'settings' && (
-        <div className="mx-auto max-w-3xl space-y-6">
-          <GameSettingsPanel
-            config={config}
-            onChange={updateConfig}
-            categories={categories}
-            words={words}
-            saveError={saveError}
-            poolByGame={poolByGame}
-            onDone={() => setTab('games')}
-          />
         </div>
       )}
 
@@ -267,7 +264,6 @@ function GameSettingsPanel({
   words,
   saveError,
   poolByGame,
-  onDone,
 }: {
   config: GameSetupConfig;
   onChange: (config: GameSetupConfig) => void;
@@ -275,7 +271,6 @@ function GameSettingsPanel({
   words: Word[];
   saveError: string | null;
   poolByGame: Map<GameId, Word[]>;
-  onDone: () => void;
 }) {
   const issuesForAll = useMemo(() => {
     const all: { game: string; issues: string[] }[] = [];
@@ -328,13 +323,6 @@ function GameSettingsPanel({
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           Ayarlarınız otomatik kaydedilir ve uygulamayı tekrar açtığınızda korunur.
         </p>
-        <button
-          type="button"
-          onClick={onDone}
-          className="shrink-0 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-800"
-        >
-          Oyunlara dön
-        </button>
       </div>
     </div>
   );

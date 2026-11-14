@@ -46,6 +46,7 @@ import {
 import type { GameId, QuizGameId } from '@/lib/games/types';
 
 const WORD_SORT_KEY = 'sanasto.wordListSort';
+const FAVORITES_CATEGORY_ID = '__favorites__';
 
 type CategoryTab = 'words' | 'games';
 
@@ -67,10 +68,9 @@ function getNextGameDefinition(gameId: GameId): GameDefinition | undefined {
 interface CategoryDetailPageProps {
   category: Category;
   overrideWords?: Word[];
-  onBack: () => void;
 }
 
-export default function CategoryDetailPage({ category, overrideWords, onBack }: CategoryDetailPageProps) {
+export default function CategoryDetailPage({ category, overrideWords }: CategoryDetailPageProps) {
   const isUncategorized = category.id === '__uncategorized__';
   const { words: allWords, categories, isLoading } = useLibrary();
   const categoryWords = useMemo(
@@ -91,14 +91,14 @@ export default function CategoryDetailPage({ category, overrideWords, onBack }: 
   );
 
   const gameConfig = useGameSettings();
-  const isVirtualCategory = overrideWords !== undefined;
+  const isFavoritesCategory = category.id === FAVORITES_CATEGORY_ID;
   const categoryConfig: GameSetupConfig = useMemo(
     () => ({
       ...gameConfig.config,
-      categoryIds: isUncategorized ? [] : isVirtualCategory ? [] : [category.id],
-      favoritesOnly: isVirtualCategory ? true : gameConfig.config.favoritesOnly,
+      categoryIds: isUncategorized || isFavoritesCategory ? [] : [category.id],
+      favoritesOnly: isFavoritesCategory,
     }),
-    [gameConfig.config, category.id, isUncategorized, isVirtualCategory],
+    [gameConfig.config, category.id, isUncategorized, isFavoritesCategory],
   );
   const updateCategoryConfig = (next: GameSetupConfig) => {
     gameConfig.updateConfig({ ...next, categoryIds: gameConfig.config.categoryIds });
@@ -324,10 +324,6 @@ function CategoryWordsTab({
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold text-slate-600">
-          <span>{categoryWords.length} kelime</span>
-          <span>{visibleWords.length} gösteriliyor</span>
-        </div>
         <div ref={filterContainerRef} className="relative w-full">
           <div className="grid w-full grid-cols-2 gap-2">
             <div className="relative min-w-0">
